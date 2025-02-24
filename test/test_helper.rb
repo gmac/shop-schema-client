@@ -7,6 +7,9 @@ Bundler.require(:default, :test)
 
 require 'minitest/pride'
 require 'minitest/autorun'
+require 'net/http'
+require 'uri'
+require 'json'
 
 def load_base_admin_schema
   sdl = File.read("#{__dir__}/fixtures/admin_2025_01_public.graphql")
@@ -35,8 +38,30 @@ def load_fixture_schema
 end
 
 $shop_schema = nil
+$shop_secrets = nil
 
 def shop_schema
   $shop_schema = load_fixture_schema if $shop_schema.nil?
   $shop_schema
+end
+
+def fetch_response(casette_name, query, version: "2025-01", variables: nil)
+  file_path = "#{__dir__}/fixtures/casettes/#{casette_name}.json"
+  JSON.parse(File.read(file_path))
+rescue Errno::ENOENT
+  $shop_secrets ||= JSON.parse(File.read("#{__dir__}/../secrets.json"))
+  response = ::Net::HTTP.post(
+    URI("#{$shop_secrets["shop_url"]}/admin/api/#{version}/graphql"),
+    JSON.generate({
+      "query" => query,
+      "variables" => variables,
+    }),
+    {
+      "X-Shopify-Access-Token" => $shop_secrets["access_token"],
+      "Content-Type" => "application/json",
+      "Accept" => "application/json",
+    },
+  )
+  File.write(file_path, response.body)
+  JSON.parse(response.body)
 end

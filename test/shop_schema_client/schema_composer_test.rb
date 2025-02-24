@@ -37,6 +37,8 @@ describe "SchemaComposer" do
 
   def test_builds_metaobject_types
     type = shop_schema.get_type("TacoMetaobject")
+    assert_equal "ID!", type.get_field("id").type.to_type_signature
+    assert_equal "String!", type.get_field("handle").type.to_type_signature
     assert_equal "String", type.get_field("name").type.to_type_signature
     assert_equal "RatingMetatype", type.get_field("rating").type.to_type_signature
     assert_equal "TacoFillingMetaobject", type.get_field("protein").type.to_type_signature

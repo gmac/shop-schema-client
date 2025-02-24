@@ -2,7 +2,7 @@
 
 An experimental client for interfacing with Shopify metafields and metaobjects through a statically-typed reference schema. Try out a working shop schema server in the [example](./example/README.md) folder. This system runs as a client, so could work directly in a web browser if ported to JavaScript.
 
-This is still an early prototype that needs tests and still lacks support for `mixed_reference` and `file_reference` types.
+This is still an early prototype.
 
 ## How it works
 
@@ -188,13 +188,15 @@ Lastly, we need to transform the native query response to match the projected re
 }
 ```
 
+## First principles
+
+- Composing a shop reference schema or parsing a cached reference schema is slow (100ms+). These cold-starts should only be done in development.
+
+- Transforming requests requires a shop reference schema, so are subject to cold-starts and should only happen in development. Transformed requests should be cached for production use.
+
+- Transforming responses does NOT require a shop reference schema (a pre-computed transform map is used instead). This allows cached queries to transform their responses with minimal overhead in production.
+
 ## Usage
-
-This client operates on the following principles:
-
-- Transforming requests requires a shop reference schema (which can take 100ms+ to generate from a cold start). Live requests that require pre-processing should only be done in development mode.
-
-- Transforming presponses uses a pre-processed transform map, so does NOT require a shop reference schema. This allows request shapes to be pre-processed in development mode, then run with very little overhead in production.
 
 #### Composing a shop schema
 

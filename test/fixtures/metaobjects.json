@@ -119,7 +119,7 @@
         "validations": []
       },
       {
-        "key": "id",
+        "key": "identity",
         "description": "",
         "type": { "name": "id" },
         "validations": []

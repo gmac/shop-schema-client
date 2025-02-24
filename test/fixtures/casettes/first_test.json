@@ -1,0 +1,1 @@
+{"errors":[{"message":"Invalid global id '1'","locations":[{"line":2,"column":3}],"path":["query","product","id"],"extensions":{"code":"argumentLiteralsIncompatible","typeName":"CoercionError"}}]}

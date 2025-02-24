@@ -182,14 +182,23 @@ module ShopSchemaClient
       )
     end
 
+    # these keys are already restricted by the Shopify backend...
+    RESERVED_METAOBJECT_KEYS = ["id", "handle", "system"].freeze
+
     def build_metaobject(metaobject_def)
       builder = self
       @schema_types[metaobject_def.typename] ||= Class.new(GraphQL::Schema::Object) do
         graphql_name(metaobject_def.typename)
         description(metaobject_def.description)
         field(:id, builder.schema_types["ID"], null: false)
+        field(:handle, builder.schema_types["String"], null: false)
+        # @todo -> make `system` surface the raw Metaobject for access to updatedAt, etc.
 
         metaobject_def.fields.each do |metafield_def|
+          if RESERVED_METAOBJECT_KEYS.include?(metafield_def.key)
+            raise ValidationError, "Metaobject key `#{metafield_def.key}` is reserved for system use"
+          end
+
           builder.build_object_field(metafield_def, self)
         end
       end

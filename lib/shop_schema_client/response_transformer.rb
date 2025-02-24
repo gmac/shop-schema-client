@@ -16,17 +16,19 @@ module ShopSchemaClient
     def transform_object_scope(object_value, current_map)
       return nil if object_value.nil?
 
-      if (extensions_ns = current_map["ex"])
-        expand_extensions(object_value, extensions_ns)
-      end
-
       if (fields = current_map["f"])
         fields.each do |field_name, next_map|
+          field_transform = next_map["fx"]
+
+          if field_transform && field_transform["t"] == "metafield_extensions"
+            expand_extensions(object_value, field_name)
+          end
+
           next_value = object_value[field_name]
           next if next_value.nil?
 
-          if (transform = next_map["fx"])
-            next_value = object_value[field_name] = transform_field_value(next_value, transform)
+          if field_transform && field_transform["t"] != "metafield_extensions"
+            next_value = object_value[field_name] = transform_field_value(next_value, field_transform)
           end
 
           case next_value
@@ -64,22 +66,25 @@ module ShopSchemaClient
     end
 
     def transform_field_value(field_value, transform)
-      case transform["do"]
-      when "mf_val", "mf_ref", "mf_refs"
-        MetafieldTypeResolver.resolve(transform["t"], field_value, transform["s"])
-      when "mo_typename"
+      metafield_type = transform["t"]
+      case metafield_type
+      when "metaobject_typename"
         MetafieldTypeResolver.metaobject_typename(field_value)
-      when "ex_typename"
+      when "extensions_typename"
         MetafieldTypeResolver.extensions_typename(field_value)
+      else
+        MetafieldTypeResolver.resolve(metafield_type, field_value, transform["s"])
       end
     end
 
     def expand_extensions(object_value, extensions_ns)
       extensions_scope = {}
-      object_value.reject! do |key, value|
-        next false unless key.start_with?(RequestTransformer::EXTENSIONS_PREFIX)
+      extensions_prefix = "#{RequestTransformer::EXTENSIONS_PREFIX}#{extensions_ns}_"
 
-        extensions_scope[key.sub(RequestTransformer::EXTENSIONS_PREFIX, "")] = value
+      object_value.reject! do |key, value|
+        next false unless key.start_with?(extensions_prefix)
+
+        extensions_scope[key.sub(extensions_prefix, "")] = value
         true
       end
 

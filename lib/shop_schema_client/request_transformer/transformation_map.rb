@@ -3,20 +3,15 @@
 module ShopSchemaClient
   class RequestTransformer
     class FieldTransform
-      attr_reader :action, :metafield_type, :selections
+      attr_reader :metafield_type, :selections
 
-      def initialize(
-        action,
-        metafield_type: nil,
-        selections: nil
-      )
-        @action = action
+      def initialize(metafield_type, selections: nil)
         @metafield_type = metafield_type
         @selections = selections
       end
 
       def merge(other)
-        if other.nil? || other.action != @action || other.metafield_type != @metafield_type
+        if other.nil? || other.metafield_type != @metafield_type
           # GraphQL validates overlapping field selections for consistency, so this shouldn't happen.
           # If it does, it probably means one of a few possibilities:
           # 1. The query wasn't validated. Run static validatations and return errors.
@@ -34,7 +29,6 @@ module ShopSchemaClient
 
       def as_json
         {
-          "do" => @action,
           "t" => @metafield_type,
           "s" => @selections,
         }.tap(&:compact!)
@@ -43,14 +37,13 @@ module ShopSchemaClient
 
     class TransformationScope
       attr_reader :parent, :fields, :possible_types
-      attr_accessor :field_transform, :extensions_ns
+      attr_accessor :field_transform
 
       def initialize(parent = nil)
         @parent = parent
         @possible_types = {}
         @fields = {}
         @field_transform = nil
-        @extensions_ns = nil
       end
 
       def as_json
@@ -67,7 +60,6 @@ module ShopSchemaClient
         {
           "f" => fields.empty? ? nil : fields,
           "fx" => @field_transform&.as_json,
-          "ex" => @extensions_ns,
           "if" => possible_types.empty? ? nil : possible_types,
         }.tap(&:compact!)
       end
