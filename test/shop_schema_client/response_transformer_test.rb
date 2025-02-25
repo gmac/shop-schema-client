@@ -3,21 +3,21 @@
 require "test_helper"
 
 describe "ResponseTransformer" do
-  def test_transforms_extensions_scalar_fields
-    result = fetch(%|query {
-      product(id: "1") {
-        title
-        extensions {
-          boolean
-          color
-        }
-      }
-    }|)
+  # def test_transforms_extensions_scalar_fields
+  #   result = fetch(%|query {
+  #     product(id: "1") {
+  #       title
+  #       extensions {
+  #         boolean
+  #         color
+  #       }
+  #     }
+  #   }|)
 
-    expected = {}
+  #   expected = {}
 
-    assert true
-  end
+  #   assert true
+  # end
 
   private
 

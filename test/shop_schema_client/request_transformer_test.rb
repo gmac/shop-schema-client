@@ -777,6 +777,170 @@ describe "RequestTransformer" do
     assert_equal expected_transforms, result.as_json["transforms"].dig("f", "product")
   end
 
+  def test_transforms_fragments_on_extensions_scope
+    result = transform_request(%|query {
+      product(id: "1") {
+        extensions {
+          ... on ProductExtensions { boolean }
+          ...ProductExtensionsAttrs
+        }
+      }
+    }
+    fragment ProductExtensionsAttrs on ProductExtensions { color }
+    |)
+
+    expected_query = %|query {
+      product(id: "1") {
+        ___extensions_boolean: metafield(key: "custom.boolean") { value }
+        ...ProductExtensionsAttrs
+      }
+    }
+    fragment ProductExtensionsAttrs on Product {
+      ___extensions_color: metafield(key: "custom.color") { value }
+    }|
+
+    expected_transforms = {
+      "f" => {
+        "extensions" => {
+          "fx" => { "t" => "metafield_extensions" },
+          "f" => {
+            "boolean" => { "fx" => { "t" => "boolean" } },
+            "color" => { "fx" => { "t" => "color" } },
+          },
+        },
+      },
+    }
+
+    assert_equal expected_query.squish, result.as_json["query"].squish
+    assert_equal expected_transforms, result.as_json["transforms"].dig("f", "product")
+  end
+
+  def test_transforms_inline_fragments_with_type_condition
+    result = transform_request(%|query {
+      node(id: "1") {
+        ... { id }
+        ... on Product {
+          title
+          productExt: extensions { boolean }
+        }
+        ... on ProductVariant {
+          title
+          variantExt: extensions { test }
+        }
+      }
+    }|)
+
+    expected_query = %|query {
+      node(id: "1") {
+        ... on Node { id }
+        ... on Product {
+          title
+          ___productExt_boolean: metafield(key: "custom.boolean") { value }
+        }
+        ... on ProductVariant {
+          title
+          ___variantExt_test: metafield(key: "custom.test") { value }
+        }
+        ___typehint: __typename
+      }
+    }|
+
+    expected_transforms = {
+      "node" => {
+        "if" => {
+          "Product" => {
+            "f" => {
+              "productExt" => {
+                "fx" => { "t" => "metafield_extensions" },
+                "f" => {
+                  "boolean" => { "fx" => { "t" => "boolean" } },
+                },
+              },
+            },
+          },
+          "ProductVariant" => {
+            "f" => {
+              "variantExt" => {
+                "fx" => { "t" => "metafield_extensions" },
+                "f" => {
+                  "test" => { "fx" => { "t" => "boolean" } },
+                },
+              },
+            },
+          },
+        },
+      },
+    }
+
+    assert_equal expected_query.squish, result.as_json["query"].squish
+    assert_equal expected_transforms, result.as_json["transforms"].dig("f")
+  end
+
+  def test_transforms_fragment_spreads_with_type_condition
+    result = transform_request(%|query {
+      node(id: "1") {
+        id
+        ...ProductAttrs
+        ...VariantAttrs
+      }
+    }
+    fragment ProductAttrs on Product {
+      title
+      productExt: extensions { boolean }
+    }
+    fragment VariantAttrs on ProductVariant {
+      title
+      variantExt: extensions { test }
+    }|)
+
+    expected_query = %|query {
+      node(id: "1") {
+        id
+        ...ProductAttrs
+        ...VariantAttrs
+        ___typehint: __typename
+      }
+    }
+    fragment ProductAttrs on Product {
+      title
+      ___productExt_boolean: metafield(key: "custom.boolean") { value }
+    }
+    fragment VariantAttrs on ProductVariant {
+      title
+      ___variantExt_test: metafield(key: "custom.test") { value }
+    }|
+
+    expected_transforms = {
+      "node" => {
+        "if" => {
+          "Product" => {
+            "f" => {
+              "productExt" => {
+                "fx" => { "t" => "metafield_extensions" },
+                "f" => {
+                  "boolean" => { "fx" => { "t" => "boolean" } },
+                },
+              },
+            },
+          },
+          "ProductVariant" => {
+            "f" => {
+              "variantExt" => {
+                "fx" => { "t" => "metafield_extensions" },
+                "f" => {
+                  "test" => { "fx" => { "t" => "boolean" } },
+                },
+              },
+            },
+          },
+        },
+      },
+    }
+
+    assert_equal expected_query.squish, result.as_json["query"].squish
+    assert_equal expected_transforms, result.as_json["transforms"].dig("f")
+  end
+
   private
 
   def transform_request(document, variables: {}, operation_name: nil, schema: nil)
@@ -787,7 +951,8 @@ describe "RequestTransformer" do
       operation_name: operation_name,
     )
 
-    assert query.schema.static_validator.validate(query)[:errors].none?, "Invalid shop query."
+    errors = query.schema.static_validator.validate(query)[:errors]
+    refute errors.any?, errors.first.message if errors.any?
     ShopSchemaClient::RequestTransformer.new(query).perform
   end
 end

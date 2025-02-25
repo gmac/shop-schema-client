@@ -79,7 +79,7 @@ module ShopSchemaClient
 
     def expand_extensions(object_value, extensions_ns)
       extensions_scope = {}
-      extensions_prefix = "#{RequestTransformer::EXTENSIONS_PREFIX}#{extensions_ns}_"
+      extensions_prefix = "#{RequestTransformer::RESERVED_PREFIX}#{extensions_ns}_"
 
       object_value.reject! do |key, value|
         next false unless key.start_with?(extensions_prefix)

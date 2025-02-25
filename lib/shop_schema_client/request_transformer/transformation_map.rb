@@ -46,6 +46,26 @@ module ShopSchemaClient
         @field_transform = nil
       end
 
+      def merge(scope)
+        scope.fields.each do |k, s|
+          if (existing_field = @fields[k])
+            existing_field.merge(s)
+          else
+            @fields[k] = s
+          end
+        end
+
+        if scope.field_transform
+          if @field_transform
+            @field_transform.merge(scope.field_transform)
+          else
+            @field_transform = scope.field_transform
+          end
+        end
+
+        self
+      end
+
       def as_json
         fields = @fields.each_with_object({}) do |(k, v), m|
           info = v.as_json
@@ -87,22 +107,20 @@ module ShopSchemaClient
       def field_breadcrumb(ns)
         @current_scope = @current_scope.fields[ns] ||= TransformationScope.new(@current_scope)
         result = yield
-        back
-        result
-      end
-
-      def type_breadcrumb(types)
-        @current_scope = @current_scope.possible_types[types] ||= TransformationScope.new(@current_scope)
-        result = yield
-        back
-        result
-      end
-
-      private
-
-      def back
-        raise "TransformationMap cannot go back" if @current_scope.parent.nil?
         @current_scope = @current_scope.parent
+        result
+      end
+
+      def type_breadcrumb(typenames)
+        origin = @current_scope
+        branch = @current_scope = TransformationScope.new
+        result = yield
+
+        @current_scope = origin
+        typenames.each do |typename|
+          @current_scope.possible_types[typename] ||= TransformationScope.new(@current_scope).merge(branch)
+        end
+        result
       end
     end
   end
