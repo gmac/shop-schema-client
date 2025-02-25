@@ -26,23 +26,19 @@ module ShopSchemaClient
     end
 
     def perform
-      # GraphQL Ruby `schema.from_definition` has a bug with correct "HasMetafields" types,
-      # see https://github.com/rmosolgo/graphql-ruby/issues/5252
-      ["HasMetafields", "GiftCardTransaction"].each do |interface_name|
-        @base_schema.possible_types(@schema_types[interface_name]).each do |native_type|
-          build_native_type_extensions(native_type)
-        end
+      @base_schema.possible_types(@schema_types["HasMetafields"]).each do |native_type|
+        build_native_type_extensions(native_type)
       end
 
       while @metaobjects_to_build.any?
         defs = @metaobjects_to_build
         @metaobjects_to_build = {}
-        defs.each do |metaobject_str, is_list|
-          type = @schema_types[metaobject_str.typename] || case metaobject_str
+        defs.each do |metaobject_struct, is_list|
+          type = @schema_types[metaobject_struct.typename] || case metaobject_struct
           when MetaobjectDefinition
-            build_metaobject(metaobject_str)
+            build_metaobject(metaobject_struct)
           when MetaobjectSet
-            build_mixed_metaobject(metaobject_str)
+            build_mixed_metaobject(metaobject_struct)
           end
 
           build_connection_type(type) if is_list
@@ -51,6 +47,7 @@ module ShopSchemaClient
 
       builder = self
       Class.new(GraphQL::Schema) do
+        use(GraphQL::Schema::Visibility)
         directive(MetafieldDirective)
         add_type_and_traverse(builder.schema_types.values, root: false)
         orphan_types(builder.schema_types.values.select { |t| t.respond_to?(:kind) && t.kind.object? })
@@ -182,7 +179,7 @@ module ShopSchemaClient
       )
     end
 
-    # these keys are already restricted by the Shopify backend...
+    # these metaobject keys are already restricted by the Shopify backend...
     RESERVED_METAOBJECT_KEYS = ["id", "handle", "system"].freeze
 
     def build_metaobject(metaobject_def)

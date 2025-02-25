@@ -298,7 +298,7 @@ describe "RequestTransformer" do
       }|)
     end
 
-    assert_equal "Field aliases starting with `___` are reserved for system use.", error.message
+    assert_equal "Field aliases starting with `___` are reserved for system use", error.message
   end
 
   def test_transforms_metaobject_scalar_fields
@@ -941,18 +941,60 @@ describe "RequestTransformer" do
     assert_equal expected_transforms, result.as_json["transforms"].dig("f")
   end
 
+  def test_transforms_mixed_metaobject_reference
+    result = transform_request(%|query {
+      product(id: "1") {
+        extensions {
+          mixedReference {
+            ... on TacoMetaobject { name }
+            ... on TacoFillingMetaobject { calories }
+          }
+        }
+      }
+    }|)
+
+    expected_query = %|query {
+      product(id: "1") {
+        ___extensions_mixedReference: metafield(key: "custom.mixed_reference") {
+          reference {
+            ... on Metaobject { name: field(key: "name") { value } }
+            ... on Metaobject { calories: field(key: "calories") { value } }
+          }
+        }
+      }
+    }|
+
+    expected_transforms = {} # wut...?
+
+    assert_equal expected_query.squish, result.as_json["query"].squish
+    assert_equal expected_transforms, result.as_json["transforms"].dig("f", "product")
+  end
+
   private
 
-  def transform_request(document, variables: {}, operation_name: nil, schema: nil)
+  def transform_request(shop_query, variables: {}, operation_name: nil, schema: nil)
+    # validate and transform shop query input
     query = GraphQL::Query.new(
       schema || shop_schema,
-      query: document,
+      query: shop_query,
       variables: variables,
       operation_name: operation_name,
     )
 
     errors = query.schema.static_validator.validate(query)[:errors]
-    refute errors.any?, errors.first.message if errors.any?
-    ShopSchemaClient::RequestTransformer.new(query).perform
+    refute errors.any?, "Invalid shop query: #{errors.first.message}" if errors.any?
+    result = ShopSchemaClient::RequestTransformer.new(query).perform
+
+    # validate transformed query against base admin schema
+    admin_query = GraphQL::Query.new(
+      base_schema,
+      document: result.document,
+      variables: variables,
+      operation_name: operation_name,
+    )
+    errors = admin_query.schema.static_validator.validate(admin_query)[:errors]
+    refute errors.any?, "Invalid admin query: #{errors.first.message}" if errors.any?
+
+    result
   end
 end

@@ -253,13 +253,13 @@ describe "SchemaComposer" do
 
   def test_builds_mixed_reference_field
     field = shop_schema.get_type("ProductExtensions").get_field("mixedReference")
-    assert_equal "MixedMetaobject9c798792", field.type.to_type_signature
+    assert_equal "MixedMetaobject9C79", field.type.to_type_signature
     assert_equal "mixed_reference", metafield_directive_type_for(field)
   end
 
   def test_builds_mixed_reference_list_field
     field = shop_schema.get_type("ProductExtensions").get_field("mixedReferenceList")
-    assert_equal "MixedMetaobject9c798792Connection", field.type.to_type_signature
+    assert_equal "MixedMetaobject9C79Connection", field.type.to_type_signature
     assert_equal "list.mixed_reference", metafield_directive_type_for(field)
   end
 

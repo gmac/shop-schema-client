@@ -13,10 +13,12 @@ require 'json'
 
 def load_base_admin_schema
   sdl = File.read("#{__dir__}/fixtures/admin_2025_01_public.graphql")
-  GraphQL::Schema.from_definition(sdl)
+  schema = GraphQL::Schema.from_definition(sdl)
+  schema.use(GraphQL::Schema::Visibility)
+  schema
 end
 
-def load_fixture_catalog
+def load_shop_fixtures_catalog
   data = JSON.parse(File.read("#{__dir__}/fixtures/metaobjects.json"))
   metaobjects = data.map do |metaobject_def|
     ShopSchemaClient::SchemaComposer::MetaobjectDefinition.from_graphql(metaobject_def)
@@ -33,16 +35,20 @@ def load_fixture_catalog
   catalog
 end
 
-def load_fixture_schema
-  ShopSchemaClient::SchemaComposer.new(load_base_admin_schema, load_fixture_catalog).perform
+def load_shop_fixtures_schema
+  ShopSchemaClient::SchemaComposer.new(load_base_admin_schema, load_shop_fixtures_catalog).perform
 end
 
+$base_schema = nil
 $shop_schema = nil
 $shop_secrets = nil
 
+def base_schema
+  $base_schema ||= load_base_admin_schema
+end
+
 def shop_schema
-  $shop_schema = load_fixture_schema if $shop_schema.nil?
-  $shop_schema
+  $shop_schema ||= load_shop_fixtures_schema
 end
 
 def fetch_response(casette_name, query, version: "2025-01", variables: nil)
