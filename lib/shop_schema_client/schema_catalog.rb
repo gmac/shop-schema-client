@@ -58,52 +58,27 @@ module ShopSchemaClient
       query MetafieldDefs($after: String, $query: String, $owner_type: MetafieldOwnerType!) {
         app { id }
         results: metafieldDefinitions(first: 250, after: $after, query: $query, ownerType: $owner_type) {
-          nodes {
-            key
-            namespace
-            description
-            type { name }
-            validations {
-              name
-              value
-            }
-            ownerType
-          }
+          nodes { ...MetafieldAttrs }
           pageInfo {
             endCursor
             hasNextPage
           }
         }
       }
-    |
+      #{METAFIELD_GRAPHQL_ATTRS}|
 
     METAOBJECT_DEFINITIONS_QUERY = %|
       query MetaobjectDefs($after: String) {
         app { id }
         results: metaobjectDefinitions(first: 250, after: $after) {
-          nodes {
-            id
-            description
-            name
-            type
-            fieldDefinitions {
-              key
-              description
-              required
-              type { name }
-              validations {
-                name
-                value
-              }
-            }
-          }
+          nodes { ...MetaobjectAttrs }
           pageInfo {
             endCursor
             hasNextPage
           }
         }
       }
-    |
+      #{METAOBJECT_GRAPHQL_ATTRS}|
 
     def load(client, namespace: "custom", owner_types: OWNER_TYPE_ENUMS)
       throttle_available = 1

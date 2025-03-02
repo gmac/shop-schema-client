@@ -238,12 +238,10 @@ module ShopSchemaClient
         GraphQL::Language::Nodes::Field.new(name: "jsonValue")
       end
 
-      metafield_key = metafield_attrs[:key]
-      metafield_key = "#{@metafield_ns}.#{metafield_key}" if scope_type == EXTENSIONS_SCOPE
       GraphQL::Language::Nodes::Field.new(
         field_alias: field_alias,
         name: scope_type == EXTENSIONS_SCOPE ? "metafield" : "field",
-        arguments: [GraphQL::Language::Nodes::Argument.new(name: "key", value: metafield_key)],
+        arguments: [GraphQL::Language::Nodes::Argument.new(name: "key", value: metafield_attrs[:key])],
         selections: Array.wrap(selection),
       )
     end

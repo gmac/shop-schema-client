@@ -259,9 +259,9 @@ module ShopSchemaClient
         metafield_def.key.to_sym,
         type,
         description: metafield_def.description,
-        connection: false, # don't automatically build connection configuration
+        connection: false,
       ) do |f|
-        f.directive(MetafieldDirective, key: metafield_def.key, type: metafield_def.type)
+        f.directive(MetafieldDirective, key: metafield_def.structured_key, type: metafield_def.type)
         if MetafieldTypeResolver.connection_type?(type.unwrap.graphql_name)
           f.argument(:first, builder.schema_types["Int"], required: false)
           f.argument(:last, builder.schema_types["Int"], required: false)

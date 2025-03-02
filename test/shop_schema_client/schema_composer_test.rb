@@ -74,9 +74,18 @@ describe "SchemaComposer" do
     assert_equal "String", field.get_argument("after").type.to_type_signature
   end
 
-  def test_builds_metafield_key_field_annotations
+  def test_builds_key_annotations_for_metafields
     directive = shop_schema
       .get_type("ProductExtensions")
+      .get_field("dateTime")
+      .directives
+      .find { _1.graphql_name == "metafield" }
+    assert_equal "custom.date_time", directive.arguments.keyword_arguments[:key]
+  end
+
+  def test_builds_key_annotations_for_metaobject_fields
+    directive = shop_schema
+      .get_type("WidgetMetaobject")
       .get_field("dateTime")
       .directives
       .find { _1.graphql_name == "metafield" }

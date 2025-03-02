@@ -2,6 +2,24 @@
 
 module ShopSchemaClient
   class SchemaCatalog
+    METAOBJECT_GRAPHQL_ATTRS = %|
+      fragment MetaobjectAttrs on MetaobjectDefinition {
+        id
+        description
+        name
+        type
+        fieldDefinitions {
+          key
+          description
+          type { name }
+          validations {
+            name
+            value
+          }
+        }
+      }
+    |
+
     MetaobjectDefinition = Struct.new(
       :id,
       :type,

@@ -2,6 +2,20 @@
 
 module ShopSchemaClient
   class SchemaCatalog
+    METAFIELD_GRAPHQL_ATTRS = %|
+      fragment MetafieldAttrs on MetafieldDefinition {
+        key
+        namespace
+        ownerType
+        description
+        type { name }
+        validations {
+          name
+          value
+        }
+      }
+    |
+
     MetafieldDefinition = Struct.new(
       :key,
       :type,
@@ -21,6 +35,14 @@ module ShopSchemaClient
             validations: metafield_def["validations"],
             owner_type: metafield_def["ownerType"],
           )
+        end
+      end
+
+      def structured_key
+        if namespace
+          "#{namespace}.#{key}"
+        else
+          key
         end
       end
 
