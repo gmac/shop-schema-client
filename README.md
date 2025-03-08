@@ -1,6 +1,6 @@
 # Shopify Custom Data GraphQL
 
-A Shopify Admin API client for interacting with a Shop or App's metafields and metaobjects using statically-typed GraphQL, similar to [Contentful APIs](https://www.contentful.com/developers/docs/references/graphql). This allows a complex custom data query such as this:
+A Shopify Admin API client for interacting with a Shop or App's metafields and metaobjects through a statically-typed GraphQL API, similar to [Contentful](https://www.contentful.com/developers/docs/references/graphql). This allows complex custom data queries such as this:
 
 ```graphql
 query GetProduct($id: ID!) {
@@ -51,7 +51,9 @@ query GetProduct($id: ID!) {
 }
 ```
 
-The client works by composing a superset of the base Shopify Admin API with a Shop or App's custom data modeling inserted. This reference schema provides introspection (for live documentation), request validation, and the basis for transforming custom data queries into native Admin API requests. With layers of caching options, these transformed queries can be used in both development and production with minimal overhead.
+The client works by composing a superset of the Shopify Admin API schema with a Shop or App's custom data modeling inserted. All normal Admin API queries work with additional access to custom data extensions. This custom schema provides introspection (for live documentation), request validation, and transforms custom data queries into native Admin API requests.
+
+With layers of caching, these custom data queries can be performed with very little overhead.
 
 ## Getting started
 
@@ -104,4 +106,13 @@ end
 
 ## Configuration
 
-Tktk...
+A Client can be built with the following options:
+
+* `shop_url`: the base url of the Shop to target, without any path information.
+* `access_token`: an Admin API access token for the given Shop URL. The corresponding app must have at least read_metaobjects access.
+* `api_version`: the Admin API version to target, ex: "2025-01". While there are no enforced limitations on schema version, in practice you should only target stable schemas with a full year of support. Avoid unstable and release candidate versions that may change.
+* `file_store_path`: a repo location for writing schema files. While a first-time startup may take 10+ seconds to fetch all the necessary data, the generated schemas can be written to file and comitted to your repo for reuse. Subsequent startups reading from local schema files take less than a second. You can always delete the schema files in this store to have them regerated.
+* `lru_max_bytesize`: the maximum bytesize for caching transformed requests, measured by their JSON bytesize. LRU requests perform no pre-processing and minimal post-processing of responses, so are extremely fast with generally only a fraction of a millisecond overhead.
+* `app_context_id`: specifies an App ID to use as the base semantic context for custom data naming. See notes below.
+* `base_namespaces`: an array of metafield namespaces to organize as base custom schema fields. While multiple metafield namespaces can be placed into the base scope, this runs the risk of naming collissions. See notes below.
+* `scoped_namespaces`: an array of metafield namespaces to include in the schema with their namespace prefixes preserved.
