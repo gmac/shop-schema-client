@@ -73,7 +73,7 @@ def shop_api_client
 end
 
 def fetch_response(casette_name, query, version: "2025-01", variables: nil)
-  file_path = "#{__dir__}/fixtures/casettes/#{casette_name}.json"
+  file_path = "#{__dir__}/fixtures/responses/#{casette_name}.json"
   JSON.parse(File.read(file_path))
 rescue Errno::ENOENT
   data = shop_api_client.fetch(query, variables: variables)

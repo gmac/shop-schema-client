@@ -1,0 +1,17 @@
+{
+  "data": {
+    "product": {
+      "extensions": "Product",
+      "___extensions_widget": {
+        "reference": {
+          "boolean": {
+            "jsonValue": true
+          },
+          "color": {
+            "jsonValue": "#0000FF"
+          }
+        }
+      }
+    }
+  }
+}

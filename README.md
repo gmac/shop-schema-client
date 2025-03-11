@@ -153,7 +153,7 @@ An App schema promotes an app-owned custom data namespace as base fields and typ
 client = ShopifyCustomDataGraphQL::Client.new(
   # ...
   base_namespaces: ["$app"],
-  prefixed_namespaces: ["$app:*", "app--*", "custom", "other"],
+  prefixed_namespaces: ["$app:*", "app--*", "custom"],
   app_context_id: 123,
 )
 ```
@@ -161,7 +161,6 @@ client = ShopifyCustomDataGraphQL::Client.new(
 Results in:
 
 * **`custom.my_field`** → `custom_myField`
-* **`other.my_field`** → `other_myField`
 * **`app--123.my_field`**: → `myField`
 * **`app--123--other.my_field`** → `other_myField`
 * **`app--456.my_field`** → `app456_myField`
@@ -169,7 +168,7 @@ Results in:
 * **`app--123--my_type`** → `MyTypeMetaobject`
 * **`app--456--my_type`** → `MyTypeApp456Metaobject`
 
-Providing just `app_context_id` will automatically filter the schema down to just `$app` fields and types owned by the specified client.
+Providing just `app_context_id` will automatically filter the schema down to just `$app` fields and types owned by the specified app id.
 
 ### Combined namespaces
 

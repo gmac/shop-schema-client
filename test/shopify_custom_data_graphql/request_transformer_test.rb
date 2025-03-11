@@ -324,7 +324,7 @@ describe "RequestTransformer" do
 
     expected_query = %|query {
       product(id: "1") {
-      extensions: __typename
+        extensions: __typename
         ___extensions_widget: metafield(key: "custom.widget") {
           reference {
             ... on Metaobject {

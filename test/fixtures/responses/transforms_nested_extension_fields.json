@@ -1,0 +1,20 @@
+{
+  "data": {
+    "product": {
+      "title": "Neptune Discovery Base",
+      "extensions": "Product",
+      "___extensions_productReference": {
+        "reference": {
+          "title": "Crystal Explorer Sub",
+          "extensions": "Product",
+          "___extensions_boolean": {
+            "jsonValue": true
+          },
+          "___extensions_color": {
+            "jsonValue": "#0000FF"
+          }
+        }
+      }
+    }
+  }
+}

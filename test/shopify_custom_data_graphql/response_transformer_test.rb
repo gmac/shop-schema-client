@@ -148,6 +148,94 @@ describe "ResponseTransformer" do
     assert_equal expected, result.dig("data")
   end
 
+  def test_transforms_nested_extension_fields
+    result = fetch("transforms_nested_extension_fields", %|query {
+      product(id: "#{PRODUCT_ID}") {
+        title
+        extensions {
+          productReference {
+            title
+            extensions {
+              boolean
+              color
+            }
+          }
+        }
+      }
+    }|)
+
+    expected = {
+      "product" => {
+        "title" => "Neptune Discovery Base",
+        "extensions" => {
+          "productReference" => {
+            "title" => "Crystal Explorer Sub",
+            "extensions" => {
+              "boolean" => true,
+              "color" => "#0000FF",
+            }
+          }
+        }
+      }
+    }
+
+    assert_equal expected, result.dig("data")
+  end
+
+  def test_transforms_extension_fields_with_aliases
+    result = fetch("transforms_extension_fields_with_aliases", %|query {
+      product(id: "#{PRODUCT_ID}") {
+        extensions1: extensions {
+          myBoolean: boolean
+          myTypename: __typename
+        }
+        extensions2: extensions {
+          myColor: color
+        }
+      }
+    }|)
+
+    expected = {
+      "product" => {
+        "extensions1" => {
+          "myBoolean" => true,
+          "myTypename" => "ProductExtensions",
+        },
+        "extensions2" => {
+          "myColor" => "#0000FF",
+        },
+      },
+    }
+
+    assert_equal expected, result.dig("data")
+  end
+
+  def test_transforms_metaobject_scalar_fields
+    result = fetch("transforms_metaobject_scalar_fields", %|query {
+      product(id: "#{PRODUCT_ID}") {
+        extensions {
+          widget {
+            boolean
+            color
+          }
+        }
+      }
+    }|)
+
+    expected = {
+      "product" => {
+        "extensions" => {
+          "widget" => {
+            "boolean" => true,
+            "color" => "#0000FF",
+          },
+        },
+      },
+    }
+
+    assert_equal expected, result.dig("data")
+  end
+
   def test_transforms_mixed_reference_with_matching_type_selection
     result = fetch("mixed_reference_returning_taco", %|query {
       product(id: "1") {

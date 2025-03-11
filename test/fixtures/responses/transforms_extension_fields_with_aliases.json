@@ -1,0 +1,15 @@
+{
+  "data": {
+    "product": {
+      "extensions1": "Product",
+      "___extensions1_myBoolean": {
+        "jsonValue": true
+      },
+      "___extensions1_myTypename": "Product",
+      "extensions2": "Product",
+      "___extensions2_myColor": {
+        "jsonValue": "#0000FF"
+      }
+    }
+  }
+}
