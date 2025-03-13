@@ -103,16 +103,17 @@ module ShopifyCustomDataGraphQL
 
     def execute(query: nil, variables: nil, operation_name: nil)
       tracer = Tracer.new
-      result = tracer.span("execute") do
-        prepare_query(query, operation_name, tracer) do |admin_query|
+      tracer.span("execute") do
+        perform_query(query, operation_name, tracer) do |admin_query|
           @admin.fetch(admin_query, variables: variables)
         end
       end
-
-      puts tracer.as_json
-      result
     rescue ValidationError => e
-      { "errors" => e.errors }
+      PreparedQuery::Result.new(
+        query: query,
+        tracer: tracer,
+        result: { "errors" => e.errors },
+      )
     end
 
     def on_cache_read(&block)
@@ -127,7 +128,7 @@ module ShopifyCustomDataGraphQL
 
     private
 
-    def prepare_query(query_str, operation_name, tracer, &block)
+    def perform_query(query_str, operation_name, tracer, &block)
       digest = @digest_class.hexdigest([query_str, operation_name, VERSION].join(" "))
       if @lru && (hot_query = @lru.get(digest))
         return hot_query.perform(tracer, source_query: query_str, &block)
@@ -147,9 +148,15 @@ module ShopifyCustomDataGraphQL
       end
       raise ValidationError.new(errors: errors.map(&:to_h)) if errors.any?
 
-      return query.result.to_h if introspection_query?(query)
+      if introspection_query?(query)
+        return PreparedQuery::Result.new(
+          query: query_str,
+          tracer: tracer,
+          result: query.result.to_h,
+        )
+      end
 
-      prepared_query = tracer.span("request_transform") do
+      prepared_query = tracer.span("transform_request") do
         RequestTransformer.new(query).perform.to_prepared_query
       end
       json = prepared_query.to_json

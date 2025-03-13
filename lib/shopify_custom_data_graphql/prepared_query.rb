@@ -4,6 +4,20 @@ module ShopifyCustomDataGraphQL
   class PreparedQuery
     DEFAULT_TRACER = Tracer.new
 
+    class Result
+      attr_reader :query, :tracer, :result
+
+      def initialize(query:, tracer:, result:)
+        @query = query
+        @tracer = tracer
+        @result = result
+      end
+
+      def to_h
+        @result
+      end
+    end
+
     attr_reader :query, :transforms
 
     def initialize(params)
@@ -13,10 +27,6 @@ module ShopifyCustomDataGraphQL
       unless @query && @transforms
         raise ArgumentError, "PreparedQuery requires params `query` and `transforms`"
       end
-    end
-
-    def has_transforms?
-      @transforms.any?
     end
 
     def as_json
@@ -31,16 +41,18 @@ module ShopifyCustomDataGraphQL
     end
 
     def perform(tracer = DEFAULT_TRACER, source_query: nil)
-      # pass through source query when it requires no transforms
-      # stops queries without transformations from taking up cache space
-      return yield(source_query) if source_query && !has_transforms?
+      query = source_query && @transforms.none? ? source_query : @query
+      raw_result = tracer.span("proxy") { yield(query) }
 
-      response = tracer.span("proxy") do
-        yield(@query)
+      result = if @transforms.any?
+        tracer.span("transform_response") do
+          ResponseTransformer.new(@transforms).perform(raw_result)
+        end
+      else
+        raw_result
       end
-      tracer.span("transform_response") do
-        ResponseTransformer.new(@transforms).perform(response)
-      end
+
+      Result.new(query: query, tracer: tracer, result: result)
     end
   end
 end

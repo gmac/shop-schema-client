@@ -236,6 +236,38 @@ describe "ResponseTransformer" do
     assert_equal expected, result.dig("data")
   end
 
+  def test_transforms_metaobject_value_object_fields
+    result = fetch("transforms_metaobject_value_object_fields", %|query {
+      product(id: "1") {
+        extensions {
+          widget {
+            dimension { unit value }
+            rating { maximum: max value }
+          }
+        }
+      }
+    }|)
+
+    expected = {
+      "product" => {
+        "extensions" => {
+          "widget" => {
+            "dimension" => {
+              "unit" => "INCHES",
+              "value" => 23.0
+            },
+            "rating" => {
+              "maximum" => 5.0,
+              "value" => 5.0
+            }
+          }
+        }
+      }
+    }
+
+    assert_equal expected, result.dig("data")
+  end
+
   def test_transforms_mixed_reference_with_matching_type_selection
     result = fetch("mixed_reference_returning_taco", %|query {
       product(id: "1") {

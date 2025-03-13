@@ -1,0 +1,24 @@
+{
+  "data": {
+    "product": {
+      "extensions": "Product",
+      "___extensions_widget": {
+        "reference": {
+          "dimension": {
+            "jsonValue": {
+              "value": 23.0,
+              "unit": "INCHES"
+            }
+          },
+          "rating": {
+            "jsonValue": {
+              "scale_min": "1.0",
+              "scale_max": "5.0",
+              "value": "5.0"
+            }
+          }
+        }
+      }
+    }
+  }
+}
